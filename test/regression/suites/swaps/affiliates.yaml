@@ -1,0 +1,102 @@
+{{ template "default-state.yaml" }}
+---
+{{ template "btc-eth-pool-state.yaml" }}
+---
+type: create-blocks
+count: 1
+---
+type: check
+endpoint: http://localhost:1317/mayachain/pools
+asserts:
+  - .|length == 2
+---
+########################################################################################
+# swap cacao to btc with affiliate
+########################################################################################
+type: tx-deposit
+signer: {{ addr_maya_fox }}
+coins:
+  - amount: "10000000000"
+    asset: "cacao"
+memo: "=:BTC.BTC:{{ addr_btc_fox }}::{{ addr_maya_pig }}:500"
+---
+type: create-blocks
+count: 1
+---
+type: check
+endpoint: http://localhost:1317/mayachain/queue/outbound
+asserts:
+  - .|length == 1
+  - .[0]|.in_hash == "{{ native_txid -1 }}"
+---
+type: check
+endpoint: http://localhost:1317/cosmos/bank/v1beta1/balances/{{ addr_maya_pig }}
+asserts:
+  - .balances|length == 1
+  - .balances[]|select(.denom == "cacao")|.amount|tonumber == 500000000
+---
+type: tx-observed-out
+signer: {{ addr_maya_dog }}
+txs:
+- tx:
+    id: '{{ observe_txid 1 }}'
+    chain: BTC
+    from_address: {{ addr_btc_dog }}
+    to_address: {{ addr_btc_fox }}
+    coins:
+      - amount: "80819"
+        asset: "BTC.BTC"
+        decimals: 8
+    gas:
+      - amount: "10500"
+        asset: "BTC.BTC"
+    memo: "OUT:{{ native_txid -1 }}"
+  block_height: 1
+  finalise_height: 1
+  observed_pub_key: {{ pubkey_dog }}
+---
+type: create-blocks
+count: 1
+---
+type: check
+endpoint: http://localhost:1317/mayachain/queue/outbound
+asserts:
+  - .|length == 0
+---
+########################################################################################
+# swap btc to cacao with affiliate
+########################################################################################
+type: tx-observed-in
+signer: {{ addr_maya_dog }}
+txs:
+- tx:
+    id: '{{ observe_txid 2 }}'
+    chain: BTC
+    from_address: {{ addr_btc_fox }}
+    to_address: {{ addr_btc_dog }}
+    coins:
+      - amount: "50000000"
+        asset: "BTC.BTC"
+        decimals: 8
+    gas:
+      - amount: "10500"
+        asset: "BTC.BTC"
+    memo: "=:MAYA.CACAO:{{ addr_maya_fox }}::{{ addr_maya_pig }}:500"
+  block_height: 2
+  finalise_height: 2
+  observed_pub_key: {{ pubkey_dog }}
+---
+type: create-blocks
+count: 1
+---
+type: check
+endpoint: http://localhost:1317/cosmos/bank/v1beta1/balances/{{ addr_maya_pig }}
+asserts:
+  - .balances|length == 1
+  - .balances[]|select(.denom == "cacao")|.amount|tonumber == 126789574308
+---
+type: check
+endpoint: http://localhost:1317/cosmos/bank/v1beta1/balances/{{ addr_maya_fox }}
+asserts:
+  - .balances|length == 1
+  - .balances[]|select(.denom == "cacao")|.amount|tonumber == 2502171986566632

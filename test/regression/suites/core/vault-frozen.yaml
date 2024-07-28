@@ -1,0 +1,99 @@
+type: env
+key: SIGNING_TRANSACTION_PERIOD
+value: "3"
+---
+{{ template "default-state.yaml" }}
+---
+{{ template "btc-eth-pool-state.yaml" }}
+---
+type: create-blocks
+count: 1
+---
+type: tx-deposit
+signer: {{ addr_maya_fox }}
+coins:
+  - amount: "10000000000"
+    asset: "cacao"
+memo: "=:BTC.BTC:{{ addr_btc_fox }}"
+---
+type: create-blocks
+count: 1
+---
+type: check
+endpoint: http://localhost:1317/mayachain/queue/outbound
+asserts:
+  - .[0].in_hash == "AA3C715D2DF73DDDE3D65CE8A754D448047F70FE95BDF6E06BFCB3FE13BB427A"
+---
+type: create-blocks
+count: 1
+---
+########################################################################################
+# round 7 failure should freeze the vault
+########################################################################################
+type: tx-tss-keysign
+signer: {{ addr_maya_dog }}
+pub_key: "tmayapub1addwnpepqfshsq2y6ejy2ysxmq4gj8n8mzuzyulk9wh4n946jv5w2vpwdn2yuz3v0gx"
+id: "a9d1b11b2ba4cad1043d4552a109bbb3b6b0f9e086cdd4188d98ae4abefefb4b"
+memo: "OUT:AA3C715D2DF73DDDE3D65CE8A754D448047F70FE95BDF6E06BFCB3FE13BB427A"
+coins:
+  - amount: "8250426"
+    asset: "BTC.BTC"
+blame:
+  round: "SignRound7Message"
+  fail_reason: "yolo"
+  blame_nodes:
+    - pubkey: {{ pubkey_dog }}
+height: 100
+---
+type: create-blocks
+count: 1
+---
+type: check
+endpoint: http://localhost:1317/mayachain/vault/tmayapub1addwnpepqfshsq2y6ejy2ysxmq4gj8n8mzuzyulk9wh4n946jv5w2vpwdn2yuz3v0gx
+asserts:
+  - .frozen|length == 1
+  - .frozen[0] == "BTC"
+---
+########################################################################################
+# outbound should reschedule to the same vault after the signing period
+########################################################################################
+#type: create-blocks
+#count: 2
+#---
+#type: check
+#endpoint: http://localhost:1317/mayachain/queue/outbound
+#asserts:
+#  - .[0].in_hash == "AA3C715D2DF73DDDE3D65CE8A754D448047F70FE95BDF6E06BFCB3FE13BB427A"
+#---
+#type: tx-observed-out
+#signer: {{ addr_maya_dog }}
+#txs:
+#  - tx:
+#      id: "AA3C715D2DF73DDDE3D65CE8A754D448047F70FE95BDF6E06BFCB3FE13BB427A"
+#      chain: BTC
+#      from_address: {{ addr_btc_dog }}
+#      to_address: {{ addr_btc_fox }}
+#      coins:
+#        - amount: "85800"
+#          asset: "BTC.BTC"
+#          decimals: 8
+#      gas:
+#        - amount: "10500"
+#          asset: "BTC.BTC"
+#      memo: "OUT:AA3C715D2DF73DDDE3D65CE8A754D448047F70FE95BDF6E06BFCB3FE13BB427A"
+#    block_height: 2
+#    finalise_height: 2
+#    observed_pub_key: "tmayapub1addwnpepqfshsq2y6ejy2ysxmq4gj8n8mzuzyulk9wh4n946jv5w2vpwdn2yuz3v0gx"
+#---
+#type: create-blocks
+#count: 1
+#---
+#type: check
+#endpoint: http://localhost:1317/mayachain/vault/tmayapub1addwnpepqfshsq2y6ejy2ysxmq4gj8n8mzuzyulk9wh4n946jv5w2vpwdn2yuz3v0gx
+#asserts:
+#  - has("frozen")|not
+#---
+#type: check
+#endpoint: http://localhost:1317/mayachain/queue/outbound
+#asserts:
+#  - .|length == 0

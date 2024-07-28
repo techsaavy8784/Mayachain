@@ -1,0 +1,77 @@
+version: 0.1
+cli:
+  version: 1.22.1
+repo:
+  trunk_branch: develop
+lint:
+  definitions:
+    - name: codespell
+      commands:
+        - run: codespell --uri-ignore-words-list=* --ignore-words-list=toi,amountIn ${target}
+  enabled:
+    # - gitleaks@8.16.2
+    # - gitleaks@8.18.2
+    # - oxipng@9.0.0
+    # - ruff@0.2.2
+    - black@24.4.0
+    - codespell@2.3.0
+    - flake8@7.0.0
+    - git-diff-check
+    - gofmt@1.20.4
+    - golangci-lint@1.57.2
+    - hadolint@2.12.0
+    - isort@5.13.2
+    - markdownlint@0.41.0
+    - prettier@3.2.5
+    - shellcheck@0.9.0
+    - shfmt@3.6.0
+    - taplo@0.8.1
+    - yamllint@1.35.0
+  ignore:
+    - linters: [ALL]
+      paths:
+        - build/docker/Dockerfile
+        # NOTE: Temporarily disabled to import Heimdall repo.
+        - test/smoke
+        - openapi/gen
+        - "**/*gen.go"
+    - linters:
+        - prettier
+        - yamllint
+      paths:
+        - test/fixtures/endpoints/auth/accounts/malformed.json
+        - test/regression/README.md
+        - test/regression/mnt/exports/**
+        - test/regression/mnt/blocks/**
+        - test/regression/suites/**
+        - test/regression/templates/**
+    - linters:
+        - hadolint
+        - terrascan
+      paths:
+        - ci/Dockerfile.regtest.dockerignore
+    - linters:
+        - codespell
+      paths:
+        - bifrost/pkg/chainclients/gaia/test-data/latest_block.json
+        - bifrost/pkg/chainclients/thorchain/test-data/latest_block.json
+        - bifrost/pkg/chainclients/kuji/test-data/latest_block.json
+        - common/tokenlist/*/*.json
+        - x/mayachain/preregister_mayanames.json
+        - third_party/**
+        - test/regression/mnt/exports/**
+        - test/regression/mnt/blocks/**
+plugins:
+  sources:
+    - id: trunk
+      ref: v1.4.3
+      uri: https://github.com/trunk-io/plugins
+actions:
+  enabled:
+    - trunk-cache-prune
+    - trunk-upgrade-available
+runtimes:
+  enabled:
+    - go@1.22.3
+    - node@18.12.1
+    - python@3.10.8

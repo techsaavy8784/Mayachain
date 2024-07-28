@@ -1,0 +1,11 @@
+.trunk
+__pycache__
+build/lambda
+build/docker
+ci
+docs
+semgrep
+bugbounty.md
+LICENSE
+README.md
+tools/hardhat
