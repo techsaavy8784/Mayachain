@@ -49,8 +49,14 @@ func (m *MsgManageMAYAName) ValidateBasic() error {
 	if m.AffiliateSplit < 0 {
 		return cosmos.ErrUnknownRequest("affiliate_split cannot be negative")
 	}
+	if m.AffiliateSplit >= 10000 {
+		return cosmos.ErrUnknownRequest("affiliate_split cannot exceed 10000")
+	}
 	if m.SubAffiliateSplit < 0 {
 		return cosmos.ErrUnknownRequest("sub_affiliate_split cannot be negative")
+	}
+	if m.SubAffiliateSplit >= 10000 {
+		return cosmos.ErrUnknownRequest("sub_affiliate_split cannot exceed 10000")
 	}
 	return nil
 }
